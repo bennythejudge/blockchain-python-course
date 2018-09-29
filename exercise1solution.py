@@ -40,3 +40,16 @@ copied_persons[0]['name'] = 'giorgio'
 
 print("persons: {}".format(persons))
 print("copied_persons: {}".format(copied_persons))
+
+
+# deep clone of a list of dictionaries
+deep_cloned_persons = [person.copy() for person in persons]
+deep_cloned_persons[0]['name'] = 'marco'
+
+print("persons: {}".format(persons))
+print("deep_cloned_persons: {}".format(deep_cloned_persons))
+
+# unpack
+p1,p2,p3 = persons
+
+print(p1,p2,p3)

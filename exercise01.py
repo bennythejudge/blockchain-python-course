@@ -12,7 +12,8 @@ person = {
     'hobbies': []
 }
 
-for i in range(0,random.randint(1,5)):
+# for i in range(0,random.randint(1,5)):
+for i in range(0, 3):
     hobbies = []
     hobbies = [uuid.uuid4().hex.lower() for i in range(0,6)]
     print(hobbies)
@@ -26,9 +27,14 @@ for i in range(0,random.randint(1,5)):
 
 print("persons: {}".format(persons))
 
+print()
+print("list comprehensions")
 names = [el['name'] for el in persons]
 
 print("names: {} len(persons): {}".format(names, len(persons)))
+
+print()
+print("are they all > 20yrs old?")
 
 ages = [el['age'] > 20 for el in persons]
 
@@ -36,8 +42,21 @@ print("ages: {}".format(ages))
 
 print("are they all over 20? {}".format(all(ages)))
 
-edit_persons = persons[:]
+print()
+print("real edit - deep clone")
+
+edit_persons = [person.copy() for person in persons]
 
 edit_persons[0]['name'] = "Pippo"
 
-print("0 edit_persons: {} --- 0 persons: {}".format(edit_persons[0]['name'],persons[0]['name']))
+print("persons: {}".format(persons))
+print("edit_persons: {}".format(edit_persons))
+
+# unpacking
+print()
+print("Unpacking")
+f1, f2, f3 = persons
+
+print(f1)
+print(f2)
+print(f3)
