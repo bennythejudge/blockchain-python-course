@@ -4,6 +4,7 @@
 ##########################################
 import names
 import random
+import functools
 
 MINING_REWARD = 10
 
@@ -12,12 +13,117 @@ genesis_block = {
     'index': 0,
     'transactions': []
 }
+
+# initialize an empty blockchain list
 blockchain = [genesis_block]
 open_transactions = []
 owner = 'me'
-participants = set()
+participants = set(owner)
+
+
+def hash_block(block):
+    """Hashes a block and returns a string representation of it
+
+    Arguments:
+        :block: the block that should be hashed
+    """
+    # mine was wrong!!! aaargh!!!!
+    # return '-'.join(str([block[k] for k in block]))
+    return '-'.join([str(block[key]) for key in block])
+
+
+# def get_balance(participant):
+#     """Calculate and return the balance for a participant.
+#
+#     Arguments:
+#         :participant: The person for whom to calculate the balance.
+#     """
+#     print()
+#     print()
+#     print("************************* BALANCE START *****************************************")
+#     print("DEBUG: entering get_balance for {}".format(participant))
+#     # Fetch a list of all sent coin amounts for the given person (empty lists are returned if the person was NOT the
+#     # sender). This fetches sent amounts of transactions that were already included in blocks of the blockchain
+#     tx_sender = [[tx['amount'] for tx in block['transactions'] if tx['sender'] == participant] for block in
+#                  blockchain]
+#     print("DEBUG:get_balance: tx_sender: {}".format(tx_sender))
+#     # Fetch a list of all sent coin amounts for the given person (empty lists are returned if the person was NOT the
+#     # sender). This fetches sent amounts of open transactions (to avoid double spending)
+#     # get the full list of trx - consider also open transactions which otherwise could exceed the balance
+#     open_tx_sender = [tx['amount'] for tx in open_transactions if tx['sender'] == participant]
+#     print("DEBUG:get_balance:open_tx_sender: {}".format(open_tx_sender))
+#
+#     tx_sender.append(open_tx_sender)
+#     print("DEBUG: tx_sender: {}".format(tx_sender))
+#
+#     #print("tx_sender: {}".format(tx_sender))
+#     # introducing the reduce function
+#     print("DEBUG: before reduce, tx_sender: {}".format(tx_sender))
+#     amount_sent = functools.reduce(
+#         lambda tx_sum, tx_amt: tx_sum + tx_amt[0] if len(tx_amt)> 0 else 0,
+#         tx_sender, 0)
+#     print("DEBUG: after reduce amount_sent: {}".format(amount_sent));
+#     # for entries in tx_sender:
+#     #     #print("entries: {}".format(entries))
+#     #     for tx in entries:
+#     #         amount_sent += tx
+#     #         print("DEBUG: loops tx_sender: tx {} amount_sent: {}".format(tx,amount_sent))
+#
+#     # transactions recipient
+#     tx_recipient = [[tx['amount'] for tx in block['transactions'] if tx['recipient'] == participant] for block in
+#                  blockchain]
+#     # TODO: we need to consider also the open transactions
+#     # get the full list of trx - consider also open transactions which otherwise could exceed the balance
+#     open_tx_recipient = [tx['amount'] for tx in open_transactions if tx['recipient'] == participant]
+#
+#     print("DEBUG:get_balance:open_tx_recipient: {}".format(open_tx_recipient))
+#
+#     tx_recipient.append(open_tx_recipient)
+#
+#     print("DEBUG: before reduce transactions_recipient: {}".format(tx_recipient))
+#     amount_received = functools.reduce(
+#         lambda tx_sum, tx_amt: tx_sum + tx_amt[0] if len(tx_amt)> 0 else 0,
+#         tx_recipient, 0)
+#     print("DEBUG: after reduce amount_received: {}".format(amount_received));
+#     # for entries in transactions_recipient:
+#     #     #print("entries: {}".format(entries))
+#     #     for tx in entries:
+#     #         amount_received += tx
+#     #         #print("amount_sent: {}".format(amount_sent))
+#     # print(tx_sender)
+#     print("************************* BALANCE END *****************************************")
+#     return amount_received - amount_sent
+def get_balance(participant):
+    """Calculate and return the balance for a participant.
+
+    Arguments:
+        :participant: The person for whom to calculate the balance.
+    """
+    # Fetch a list of all sent coin amounts for the given person (empty lists are returned if the person was NOT the sender)
+    # This fetches sent amounts of transactions that were already included in blocks of the blockchain
+    tx_sender = [[tx['amount'] for tx in block['transactions'] if tx['sender'] == participant] for block in blockchain]
+    # Fetch a list of all sent coin amounts for the given person (empty lists are returned if the person was NOT the sender)
+    # This fetches sent amounts of open transactions (to avoid double spending)
+    open_tx_sender = [tx['amount'] for tx in open_transactions if tx['sender'] == participant]
+    tx_sender.append(open_tx_sender)
+    amount_sent = functools.reduce(lambda tx_sum, tx_amt: tx_sum + tx_amt[0] if len(tx_amt) > 0 else 0, tx_sender, 0)
+    # This fetches received coin amounts of transactions that were already included in blocks of the blockchain
+    # We ignore open transactions here because you shouldn't be able to spend coins before the transaction was confirmed + included in a block
+    tx_recipient = [[tx['amount'] for tx in block['transactions'] if tx['recipient'] == participant] for block in
+                    blockchain]
+    amount_received = functools.reduce(lambda tx_sum, tx_amt: tx_sum + tx_amt[0] if len(tx_amt) > 0 else 0,
+                                       tx_recipient, 0)
+    # Return the total balance
+    return amount_received - amount_sent
+
+def get_last_blockchain_value():
+    """ returns the last value of the current blockchain """
+    if len(blockchain) < 1:
+        return None
+    return blockchain[-1]
 
 def verify_transactions():
+    """Verifies all open transactions."""
     return all([verify_transaction(tx) for tx in open_transactions])
 
 def verify_transaction(transaction):
@@ -27,7 +133,6 @@ def verify_transaction(transaction):
     print("verify_transaction:  transaction['amount'] {}".format( transaction['amount']))
     print()
     print()
-
     return sender_balance >= transaction['amount']
 
 def verify_chain():
@@ -37,88 +142,6 @@ def verify_chain():
         elif block['previous_hash'] != hash_block(blockchain[index - 1]):
             return False
     return True
-
-
-def hash_block(block):
-    return '-'.join(str([block[k] for k in block]))
-
-
-def get_balance(participant):
-    # for each block in the block chain
-    #     for each tx in the block
-    # something like that
-    # print("get_balance1: {}".format([block for block in blockchain]))
-    # print("get_balance2: {}".format([block['transactions'] for block in blockchain]))
-    # print("get_balance3: {}".format([[tx['amount'] for tx in block['transactions']] for block in
-    #              blockchain]))
-    # transactions sender
-    print()
-    print()
-    print("DEBUG: entering get_balance for {}".format(participant))
-    tx_sender = [[tx['amount'] for tx in block['transactions'] if tx['sender'] == participant] for block in
-                 blockchain]
-
-    print("DEBUG: tx_sender: {}".format(tx_sender))
-
-
-    # get the full list of trx - consider also open transactions which otherwise could exceed the balance
-    open_tx_sender = [tx['amount'] for tx in open_transactions if tx['sender'] == participant]
-
-    print("DEBUG: open_tx_sender: {}".format(open_tx_sender))
-
-    tx_sender.append(open_tx_sender)
-
-    print("DEBUG: tx_sender: {}".format(tx_sender))
-
-    #print("tx_sender: {}".format(tx_sender))
-    amount_sent = 0
-    for entries in tx_sender:
-        #print("entries: {}".format(entries))
-        for tx in entries:
-            amount_sent += tx
-            print("DEBUG: loops tx_sender: tx {} amount_sent: {}".format(tx,amount_sent))
-
-    # transactions receiver
-    transactions_recipient = [[tx['amount'] for tx in block['transactions'] if tx['recipient'] == participant] for block in
-                 blockchain]
-    print("transactions_recipient: {}".format(transactions_recipient))
-    amount_received = 0
-    for entries in transactions_recipient:
-        #print("entries: {}".format(entries))
-        for tx in entries:
-            amount_received += tx
-            #print("amount_sent: {}".format(amount_sent))
-    # print(tx_sender)
-    return amount_received - amount_sent
-
-
-def mine_block():
-    reward_transaction = {
-        'sender': 'MINING',
-        'recipient': owner,
-        'amount': MINING_REWARD
-    }
-    copied_transactions = open_transactions[:]
-    participants.add(owner)
-    copied_transactions.append(reward_transaction)
-    print("Entering mine_block with open_transactions: {}".format(copied_transactions))
-    last_block = get_last_blockchain_value()
-    print("last_block: {}".format(last_block))
-    hashed_block = hash_block(last_block)
-    print(hashed_block)
-    block = {
-        'previous_hash': hashed_block,
-        'index': len(blockchain),
-        'transactions': copied_transactions
-    }
-    blockchain.append(block)
-    print("Leaving mine_block")
-    return True
-
-
-def get_last_blockchain_value():
-    """ returns the last value of the current blockchain """
-    return blockchain[-1]
 
 
 def add_transaction(recipient, sender=owner, amount=1.0):
@@ -133,7 +156,6 @@ def add_transaction(recipient, sender=owner, amount=1.0):
         'recipient': recipient,
         'amount': amount
     }
-
     if verify_transaction(transaction):
         print("DEBUG: inside add_transaction: true branch")
         open_transactions.append(transaction)
@@ -143,8 +165,36 @@ def add_transaction(recipient, sender=owner, amount=1.0):
         participants.add(recipient)
         print("DEBUG: participants: {}".format(participants))
         return True
-
     return False
+
+
+def mine_block():
+    print("DEBUG: entering mine_block() **********************************************")
+    reward_transaction = {
+        'sender': 'MINING',
+        'recipient': owner,
+        'amount': MINING_REWARD
+    }
+    print("DEBUG: reward_transaction {}".format(reward_transaction))
+    copied_transactions = open_transactions[:]
+    print("DEBUG: copied_transactions {}".format(copied_transactions))
+    participants.add(owner)
+    copied_transactions.append(reward_transaction)
+    print("DEBUG: copied_transactions {}".format(copied_transactions))
+    print("DEBUG: Entering mine_block with open_transactions: {}".format(copied_transactions))
+    last_block = get_last_blockchain_value()
+    print("DEBUG: last_block: {}".format(last_block))
+    hashed_block = hash_block(last_block)
+    print(hashed_block)
+    block = {
+        'previous_hash': hashed_block,
+        'index': len(blockchain),
+        'transactions': copied_transactions
+    }
+    blockchain.append(block)
+    print("DEBUG: balance: {}".format(get_balance(owner)))
+    print("DEBUG: Leaving mine_block() **********************************************")
+    return True
 
 
 def get_user_choice():
